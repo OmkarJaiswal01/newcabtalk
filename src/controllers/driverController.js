@@ -1,9 +1,13 @@
+// driverController.js
+import asyncHandler from "express-async-handler";
 import Driver from "../models/driverModel.js";
-import { asyncHandler } from "../middlewares/asyncHandler.js";
 
-export const addDriver = asyncHandler(async (req, res, next) => {
+/**
+ * Create or update a driver.
+ * If a driver with the same phoneNumber exists, update it.
+ */
+export const createDriver = asyncHandler(async (req, res) => {
   const { name, phoneNumber, vehicleNumber, licenseImage } = req.body;
-  console.log({ name, phoneNumber, vehicleNumber, licenseImage }, "Request body received");
 
   if (!name || !phoneNumber || !vehicleNumber || !licenseImage) {
     return res.status(400).json({
@@ -12,56 +16,46 @@ export const addDriver = asyncHandler(async (req, res, next) => {
     });
   }
 
-  try {
-    let driver = await Driver.findOne({ phoneNumber });
+  // Check if the driver exists (using phoneNumber as unique identifier)
+  let driver = await Driver.findOne({ phoneNumber });
+  if (driver) {
+    // Update driver details.
+    driver.name = name;
+    driver.vehicleNumber = vehicleNumber;
+    driver.licenseImage = licenseImage;
+    await driver.save();
 
-    if (driver) {
-      driver.name = name;
-      driver.vehicleNumber = vehicleNumber;
-      driver.licenseImage = licenseImage;
-      await driver.save();
-
-      return res.status(200).json({
-        success: true,
-        message: "Driver details updated successfully.",
-        driver,
-      });
-    }
-
-    driver = await Driver.create({
-      name,
-      phoneNumber,
-      vehicleNumber,
-      licenseImage,
-    });
-
-    return res.status(201).json({
+    return res.status(200).json({
       success: true,
-      message: "Driver added successfully.",
+      message: "Driver updated successfully.",
       driver,
     });
-  } catch (error) {
-    console.error("Error in adding/updating driver:", error.message);
-    return res.status(500).json({
-      success: false,
-      message: "An error occurred while processing the request.",
-    });
   }
+
+  // Create a new driver.
+  driver = await Driver.create({ name, phoneNumber, vehicleNumber, licenseImage });
+  return res.status(201).json({
+    success: true,
+    message: "Driver created successfully.",
+    driver,
+  });
 });
 
+/**
+ * Get all drivers.
+ */
 export const getAllDrivers = asyncHandler(async (req, res) => {
   const drivers = await Driver.find();
 
-  if (drivers.length === 0) {
+  if (!drivers || drivers.length === 0) {
     return res.status(404).json({
       success: false,
       message: "No drivers found.",
     });
   }
 
-  return res.status(200).json({
+  res.status(200).json({
     success: true,
-    message: "Drivers retrieved successfully.",
     drivers,
   });
 });

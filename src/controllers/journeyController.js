@@ -1,108 +1,78 @@
-import mongoose from "mongoose";
-import Journey from "../models/JourneyModel.js";
+// journeyController.js
+import asyncHandler from "express-async-handler";
+import Journey from "../models/journeyModel.js";
+import Driver from "../models/driverModel.js";
+import AssetModel from "../models/AssetModel.js";
 
+/**
+ * Create a journey based on a given vehicle number.
+ * The client must provide Journey_Type, Occupancy, and vehicleNumber.
+ */
+export const createJourneyByVehicleNumber = asyncHandler(async (req, res) => {
+  const { Journey_Type, Occupancy, vehicleNumber, SOS_Status } = req.body;
 
-export const createJourney = async (req, res) => {
-  try {
-    const { Journey_Type, Occupancy, Assets, SOS_Status } = req.body;
-
-    if (!Journey_Type || !Occupancy || !Assets ) {
-      return res.status(400).json({ message: "All required fields must be provided." });
-    }
-
-    // Validate asset IDs
-    // const existingAssets = await Asset.find({ _id: { $in: Assets } });
-    // if (existingAssets.length !== Assets.length) {
-    //   return res.status(400).json({ message: "One or more assets are invalid." });
-    // }
-
-    const newJourney = new Journey({
-      Assets,
-      Journey_Type,
-      Occupancy,
-      SOS_Status: SOS_Status || "inActive",
+  if (!Journey_Type || !Occupancy || !vehicleNumber) {
+    return res.status(400).json({
+      success: false,
+      message: "Journey_Type, Occupancy, and vehicleNumber are required.",
     });
-
-    const savedJourney = await newJourney.save();
-    res.status(201).json(savedJourney);
-  } catch (error) {
-    res.status(500).json({ message: "Error creating journey", error: error.message });
   }
-};
 
-export const getJourneys = async (req, res) => {
-  try {
-    const journeys = await Journey.find().populate("Assets").populate({
+  // 1. Find the driver using the vehicle number.
+  const driver = await Driver.findOne({ vehicleNumber });
+  if (!driver) {
+    return res.status(404).json({
+      success: false,
+      message: "Driver not found for the given vehicle number.",
+    });
+  }
+
+  // 2. Retrieve asset(s) associated with this driver.
+  const assets = await AssetModel.find({ driver: driver._id });
+  if (!assets || assets.length === 0) {
+    return res.status(404).json({
+      success: false,
+      message: "No assets found for this driver.",
+    });
+  }
+  const assetIds = assets.map((asset) => asset._id);
+
+  // 3. Create the journey with the asset IDs.
+  const journey = await Journey.create({
+    Assets: assetIds,
+    Journey_Type,
+    Occupancy,
+    SOS_Status: SOS_Status || "inActive",
+  });
+
+  res.status(201).json({
+    success: true,
+    message: "Journey created successfully.",
+    journey,
+  });
+});
+
+
+/**
+ * Get all journeys.
+ * Each journey is populated with its asset details and the associated driver details.
+ */
+export const getAllJourneys = asyncHandler(async (req, res) => {
+  const journeys = await Journey.find()
+    .populate({
       path: "Assets",
-      populate: { path: "driver" }, // Populating driver inside Assets
+      populate: { path: "driver", select: "name phoneNumber vehicleNumber licenseImage" },
     });
-    res.status(200).json(journeys);
-  } catch (error) {
-    res.status(500).json({ message: "Error fetching journeys", error: error.message });
+
+  if (!journeys || journeys.length === 0) {
+    return res.status(404).json({
+      success: false,
+      message: "No journeys found.",
+    });
   }
-};
 
-export const getJourneyById = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: "Invalid journey ID." });
-    }
-
-    const journey = await Journey.findById(id).populate("Assets");
-    if (!journey) {
-      return res.status(404).json({ message: "Journey not found." });
-    }
-
-    res.status(200).json(journey);
-  } catch (error) {
-    res.status(500).json({ message: "Error fetching journey", error: error.message });
-  }
-};
-
-export const updateJourney = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { Journey_Type, Occupancy, Vehicle_Number, Assets, SOS_Status } = req.body;
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: "Invalid journey ID." });
-    }
-
-    if (Assets && !Array.isArray(Assets)) {
-      return res.status(400).json({ message: "Assets must be an array of valid IDs." });
-    }
-
-    const updatedJourney = await Journey.findByIdAndUpdate(
-      id,
-      { Journey_Type, Occupancy, Vehicle_Number, Assets, SOS_Status },
-      { new: true }
-    ).populate("Assets");
-
-    if (!updatedJourney) {
-      return res.status(404).json({ message: "Journey not found." });
-    }
-
-    res.status(200).json(updatedJourney);
-  } catch (error) {
-    res.status(500).json({ message: "Error updating journey", error: error.message });
-  }
-};
-
-export const deleteJourney = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: "Invalid journey ID." });
-    }
-
-    const deletedJourney = await Journey.findByIdAndDelete(id);
-    if (!deletedJourney) {
-      return res.status(404).json({ message: "Journey not found." });
-    }
-
-    res.status(200).json({ message: "Journey deleted successfully." });
-  } catch (error) {
-    res.status(500).json({ message: "Error deleting journey", error: error.message });
-  }
-};
+  res.status(200).json({
+    success: true,
+    journeys,
+  });
+});
