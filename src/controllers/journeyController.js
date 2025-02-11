@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import Journey from "../models/JourneyModel.js";
-import Asset from "../models/AssetModel.js"; // ✅ Ensure this path is correct
+// import Asset from "../models/AssetModel.js"; // ✅ Ensure this path is correct
 
 export const createJourney = async (req, res) => {
   try {
