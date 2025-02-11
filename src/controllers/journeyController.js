@@ -9,12 +9,13 @@ import AssetModel from "../models/AssetModel.js";
  * The client must provide Journey_Type, Occupancy, and vehicleNumber.
  */
 export const createJourneyByVehicleNumber = asyncHandler(async (req, res) => {
-  const { Journey_Type, Occupancy, vehicleNumber, SOS_Status } = req.body;
+  const { Journey_Type, vehicleNumber, SOS_Status } = req.body;
 
-  if (!Journey_Type || !Occupancy || !vehicleNumber) {
+  // Validate required fields.
+  if (!Journey_Type || !vehicleNumber) {
     return res.status(400).json({
       success: false,
-      message: "Journey_Type, Occupancy, and vehicleNumber are required.",
+      message: "Journey_Type and vehicleNumber are required.",
     });
   }
 
@@ -28,20 +29,28 @@ export const createJourneyByVehicleNumber = asyncHandler(async (req, res) => {
   }
 
   // 2. Retrieve asset(s) associated with this driver.
-  const assets = await AssetModel.find({ driver: driver._id });
+  // Ensure that the "passengers" field is selected if it's not included by default.
+  const assets = await AssetModel.find({ driver: driver._id }).select('capacity passengers');
   if (!assets || assets.length === 0) {
     return res.status(404).json({
       success: false,
       message: "No assets found for this driver.",
     });
   }
+  
   const assetIds = assets.map((asset) => asset._id);
 
-  // 3. Create the journey with the asset IDs.
+  // 3. Calculate occupancy as the total number of passengers across all assets.
+  const occupancy = assets.reduce((total, asset) => {
+    const passengersCount = asset.passengers ? asset.passengers.length : 0;
+    return total + passengersCount;
+  }, 0);
+
+  // 4. Create the journey with the computed occupancy and asset IDs.
   const journey = await Journey.create({
     Assets: assetIds,
     Journey_Type,
-    Occupancy,
+    Occupancy: occupancy,
     SOS_Status: SOS_Status || "inActive",
   });
 
@@ -53,10 +62,9 @@ export const createJourneyByVehicleNumber = asyncHandler(async (req, res) => {
 });
 
 
-/**
- * Get all journeys.
- * Each journey is populated with its asset details and the associated driver details.
- */
+
+
+
 export const getAllJourneys = asyncHandler(async (req, res) => {
   const journeys = await Journey.find()
     .populate({

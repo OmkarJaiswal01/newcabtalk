@@ -8,7 +8,7 @@ const journeyRoutes = express.Router();
 journeyRoutes.use(express.json());
  
 // Route for inserting a passenger
-journeyRoutes.post('/journeys/byVehicle', createJourneyByVehicleNumber);
+journeyRoutes.post('/journeys', createJourneyByVehicleNumber);
 journeyRoutes.get('/journeys', getAllJourneys)
  
 export default journeyRoutes;
