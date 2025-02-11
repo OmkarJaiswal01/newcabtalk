@@ -32,7 +32,10 @@ export const createJourney = async (req, res) => {
 
 export const getJourneys = async (req, res) => {
   try {
-    const journeys = await Journey.find().populate("Assets");
+    const journeys = await Journey.find().populate("Assets").populate({
+      path: "Assets",
+      populate: { path: "driver" }, // Populating driver inside Assets
+    });
     res.status(200).json(journeys);
   } catch (error) {
     res.status(500).json({ message: "Error fetching journeys", error: error.message });
