@@ -1,7 +1,8 @@
-import Asset from "../models/assetModel.js";
+
 import Driver from "../models/driverModel.js";
 import Passenger from "../models/Passenger.js";
 import { asyncHandler } from "../middlewares/asyncHandler.js";
+import Asset from "../models/AssetModel.js";
 
 export const addAsset = asyncHandler(async (req, res) => {
   const { driverId, capacity, isActive } = req.body;
