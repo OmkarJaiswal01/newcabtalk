@@ -2,7 +2,7 @@
 import Driver from "../models/driverModel.js";
 import Passenger from "../models/Passenger.js";
 import { asyncHandler } from "../middlewares/asyncHandler.js";
-// import Asset from "../models/AssetModel.js";
+import Asset from "../models/AssetModel.js";
 
 export const addAsset = asyncHandler(async (req, res) => {
   const { driverId, capacity, isActive } = req.body;
@@ -23,12 +23,12 @@ export const addAsset = asyncHandler(async (req, res) => {
       .json({ success: false, message: "Driver not found." });
   }
 
-  // const asset = await Asset.create({
-  //   driver: driver._id,
-  //   capacity,
-  //   passengers: [],
-  //   isActive,
-  // });
+  const asset = await Asset.create({
+    driver: driver._id,
+    capacity,
+    passengers: [],
+    isActive,
+  });
 
   res.status(201).json({
     success: true,
