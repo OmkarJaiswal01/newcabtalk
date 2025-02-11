@@ -1,25 +1,29 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
-const journeySchema = new mongoose.Schema({
-    Assets: {
+const journeySchema = new mongoose.Schema(
+  {
+    Assets: [
+      {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Asset',
-        required: true
-    },
+        ref: "Asset",
+        required: true,
+      },
+    ],
     Journey_Type: {
-        type: String,
-        required: true
+      type: String,
+      required: true,
     },
     Occupancy: {
-        type: Number,
-        required: true
+      type: Number,
+      required: true,
     },
-
     SOS_Status: {
-        type: String,
-        default: 'inActive'
-    }
-}, { timestamps: true });
+      type: String,
+      default: "inActive",
+    },
+  },
+  { timestamps: true }
+);
 
-const Journey = mongoose.model('Journey', journeySchema);
+const Journey = mongoose.model("Journey", journeySchema);
 export default Journey;

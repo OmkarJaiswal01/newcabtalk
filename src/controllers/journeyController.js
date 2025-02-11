@@ -1,14 +1,20 @@
 import mongoose from "mongoose";
 import Journey from "../models/JourneyModel.js";
-import Asset from "../models/AssetModel.js";
+import Asset from "../models/AssetModel.js"; // ✅ Ensure this path is correct
 
 export const createJourney = async (req, res) => {
   try {
     const { Journey_Type, Occupancy, Assets, SOS_Status } = req.body;
 
-    if (!Journey_Type || !Occupancy || !Assets) {
+    if (!Journey_Type || !Occupancy || !Assets ) {
       return res.status(400).json({ message: "All required fields must be provided." });
     }
+
+    // Validate asset IDs
+    // const existingAssets = await Asset.find({ _id: { $in: Assets } });
+    // if (existingAssets.length !== Assets.length) {
+    //   return res.status(400).json({ message: "One or more assets are invalid." });
+    // }
 
     const newJourney = new Journey({
       Assets,
@@ -24,67 +30,76 @@ export const createJourney = async (req, res) => {
   }
 };
 
-
-
 export const getJourneys = async (req, res) => {
   try {
-      const journeys = await Journey.find().populate('Assets');
-      res.status(200).json(journeys);
+    const journeys = await Journey.find().populate("Assets");
+    res.status(200).json(journeys);
   } catch (error) {
-      res.status(500).json({ message: 'Error fetching journeys', error: error.message });
+    res.status(500).json({ message: "Error fetching journeys", error: error.message });
   }
 };
-
 
 export const getJourneyById = async (req, res) => {
   try {
-      const { id } = req.params;
-      const journey = await Journey.findById(id).populate('Assets');
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid journey ID." });
+    }
 
-      if (!journey) {
-          return res.status(404).json({ message: 'Journey not found.' });
-      }
+    const journey = await Journey.findById(id).populate("Assets");
+    if (!journey) {
+      return res.status(404).json({ message: "Journey not found." });
+    }
 
-      res.status(200).json(journey);
+    res.status(200).json(journey);
   } catch (error) {
-      res.status(500).json({ message: 'Error fetching journey', error: error.message });
+    res.status(500).json({ message: "Error fetching journey", error: error.message });
   }
 };
 
-// ✅ Update Journey
 export const updateJourney = async (req, res) => {
   try {
-      const { id } = req.params;
-      const { Journey_Type, Occupancy, Vehicle_Number, Assets, SOS_Status } = req.body;
+    const { id } = req.params;
+    const { Journey_Type, Occupancy, Vehicle_Number, Assets, SOS_Status } = req.body;
 
-      const updatedJourney = await Journey.findByIdAndUpdate(
-          id,
-          { Journey_Type, Occupancy, Vehicle_Number, Assets, SOS_Status },
-          { new: true }
-      );
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid journey ID." });
+    }
 
-      if (!updatedJourney) {
-          return res.status(404).json({ message: 'Journey not found.' });
-      }
+    if (Assets && !Array.isArray(Assets)) {
+      return res.status(400).json({ message: "Assets must be an array of valid IDs." });
+    }
 
-      res.status(200).json(updatedJourney);
+    const updatedJourney = await Journey.findByIdAndUpdate(
+      id,
+      { Journey_Type, Occupancy, Vehicle_Number, Assets, SOS_Status },
+      { new: true }
+    ).populate("Assets");
+
+    if (!updatedJourney) {
+      return res.status(404).json({ message: "Journey not found." });
+    }
+
+    res.status(200).json(updatedJourney);
   } catch (error) {
-      res.status(500).json({ message: 'Error updating journey', error: error.message });
+    res.status(500).json({ message: "Error updating journey", error: error.message });
   }
 };
 
-// ✅ Delete Journey
 export const deleteJourney = async (req, res) => {
   try {
-      const { id } = req.params;
-      const deletedJourney = await Journey.findByIdAndDelete(id);
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid journey ID." });
+    }
 
-      if (!deletedJourney) {
-          return res.status(404).json({ message: 'Journey not found.' });
-      }
+    const deletedJourney = await Journey.findByIdAndDelete(id);
+    if (!deletedJourney) {
+      return res.status(404).json({ message: "Journey not found." });
+    }
 
-      res.status(200).json({ message: 'Journey deleted successfully.' });
+    res.status(200).json({ message: "Journey deleted successfully." });
   } catch (error) {
-      res.status(500).json({ message: 'Error deleting journey', error: error.message });
+    res.status(500).json({ message: "Error deleting journey", error: error.message });
   }
 };
