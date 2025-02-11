@@ -10,14 +10,8 @@ export const createJourney = async (req, res) => {
       return res.status(400).json({ message: "All required fields must be provided." });
     }
 
-    // // Validate Asset existence
-    // const assetExists = await Asset.findById(Assets);
-    // if (!assetExists) {
-    //   return res.status(404).json({ message: "Asset not found." });
-    // }
-
     const newJourney = new Journey({
-      Assets: new mongoose.Types.ObjectId(Assets),  // ✅ Correct way to create ObjectId
+      Assets,
       Journey_Type,
       Occupancy,
       SOS_Status: SOS_Status || "inActive",
@@ -31,7 +25,7 @@ export const createJourney = async (req, res) => {
 };
 
 
-// ✅ Get all Journeys with populated Asset details
+
 export const getJourneys = async (req, res) => {
   try {
       const journeys = await Journey.find().populate('Assets');
@@ -41,7 +35,7 @@ export const getJourneys = async (req, res) => {
   }
 };
 
-// ✅ Get Journey by ID
+
 export const getJourneyById = async (req, res) => {
   try {
       const { id } = req.params;
