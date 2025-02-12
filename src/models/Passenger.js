@@ -12,3 +12,4 @@ const PassengerSchema = new mongoose.Schema(
   { timestamps: true }
 );
 export default mongoose.model("Passenger", PassengerSchema);
+ 

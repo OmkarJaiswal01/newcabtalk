@@ -1,6 +1,6 @@
 import express from 'express';
 
-import { createJourneyByVehicleNumber, getAllJourneys,  } from '../controllers/journeyController.js';
+import { createJourney, getJourneys,  } from '../controllers/journeyController.js';
  
 const journeyRoutes = express.Router();
  
@@ -8,7 +8,7 @@ const journeyRoutes = express.Router();
 journeyRoutes.use(express.json());
  
 // Route for inserting a passenger
-journeyRoutes.post('/journeys', createJourneyByVehicleNumber);
-journeyRoutes.get('/journeys', getAllJourneys)
+journeyRoutes.post('/journeys', createJourney);
+journeyRoutes.get('/journeys', getJourneys)
  
 export default journeyRoutes;

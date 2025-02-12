@@ -11,3 +11,4 @@ passengerRoutes.post('/Passenger', insertPassenger);
 passengerRoutes.get('/passenger', getPassengers)
  
 export default passengerRoutes;
+ 

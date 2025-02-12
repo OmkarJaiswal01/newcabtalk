@@ -1,86 +1,66 @@
-// journeyController.js
-import asyncHandler from "express-async-handler";
-import Journey from "../models/journeyModel.js";
+import Journey from "../models/JourneyModel.js";
+import Asset from "../models/assetModel.js";
 import Driver from "../models/driverModel.js";
-import AssetModel from "../models/AssetModel.js";
 
-/**
- * Create a journey based on a given vehicle number.
- * The client must provide Journey_Type, Occupancy, and vehicleNumber.
- */
-export const createJourneyByVehicleNumber = asyncHandler(async (req, res) => {
-  const { Journey_Type, vehicleNumber, SOS_Status } = req.body;
+export const createJourney = async (req, res) => {
+  try {
+    const { Journey_Type, vehicleNumber } = req.body;
 
-  // Validate required fields.
-  if (!Journey_Type || !vehicleNumber) {
-    return res.status(400).json({
-      success: false,
-      message: "Journey_Type and vehicleNumber are required.",
+    // Find the driver by vehicle number
+    const driver = await Driver.findOne({ vehicleNumber });
+
+    if (!driver) {
+      return res.status(404).json({ message: "Driver not found" });
+    }
+
+    // Find the asset associated with the driver
+    const asset = await Asset.findOne({ driver: driver._id }).populate("passengers");
+
+    if (!asset) {
+      return res.status(404).json({ message: "Asset not found for this driver" });
+    }
+
+    // Count the passengers in the asset
+    const Occupancy = asset.passengers.length;
+
+    // Create a new journey
+    const newJourney = new Journey({
+      Driver: driver._id,
+      Asset: asset._id,
+      Journey_Type,
+      Occupancy,
     });
+
+    await newJourney.save();
+
+    return res.status(201).json({
+      message: "Journey created successfully",
+      newJourney,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Server error", error: error.message });
   }
+};
 
-  // 1. Find the driver using the vehicle number.
-  const driver = await Driver.findOne({ vehicleNumber });
-  if (!driver) {
-    return res.status(404).json({
-      success: false,
-      message: "Driver not found for the given vehicle number.",
-    });
+export const getJourneys = async (req, res) => {
+  try {
+    // Fetch journeys and populate driver, asset, and passengers
+    const journeys = await Journey.find()
+      .populate({
+        path: "Driver",
+        model: "Driver",
+      })
+      .populate({
+        path: "Asset",
+        model: "Asset",
+        populate: {
+          path: "passengers",
+          model: "Passenger",
+        },
+      });
+
+    return res.status(200).json(journeys);
+  } catch (error) {
+    return res.status(500).json({ message: "Server error", error: error.message });
   }
-
-  // 2. Retrieve asset(s) associated with this driver.
-  // Ensure that the "passengers" field is selected if it's not included by default.
-  const assets = await AssetModel.find({ driver: driver._id }).select('capacity passengers');
-  if (!assets || assets.length === 0) {
-    return res.status(404).json({
-      success: false,
-      message: "No assets found for this driver.",
-    });
-  }
-  
-  const assetIds = assets.map((asset) => asset._id);
-
-  // 3. Calculate occupancy as the total number of passengers across all assets.
-  const occupancy = assets.reduce((total, asset) => {
-    const passengersCount = asset.passengers ? asset.passengers.length : 0;
-    return total + passengersCount;
-  }, 0);
-
-  // 4. Create the journey with the computed occupancy and asset IDs.
-  const journey = await Journey.create({
-    Assets: assetIds,
-    Journey_Type,
-    Occupancy: occupancy,
-    SOS_Status: SOS_Status || "inActive",
-  });
-
-  res.status(201).json({
-    success: true,
-    message: "Journey created successfully.",
-    journey,
-  });
-});
-
-
-
-
-
-export const getAllJourneys = asyncHandler(async (req, res) => {
-  const journeys = await Journey.find()
-    .populate({
-      path: "Assets",
-      populate: { path: "driver", select: "name phoneNumber vehicleNumber licenseImage" },
-    });
-
-  if (!journeys || journeys.length === 0) {
-    return res.status(404).json({
-      success: false,
-      message: "No journeys found.",
-    });
-  }
-
-  res.status(200).json({
-    success: true,
-    journeys,
-  });
-});
+};

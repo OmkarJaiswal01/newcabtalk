@@ -19,7 +19,7 @@ export const insertPassenger = async (req, res) => {
         res.status(400).json({ message: error.message });
     }
 };
-
+ 
 export const getPassengers = async (req, res) => {
     try {
         const passengers = await Passenger.find();
@@ -28,3 +28,4 @@ export const getPassengers = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+ 

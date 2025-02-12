@@ -10,3 +10,4 @@ const driverSchema = new mongoose.Schema(
   { timestamps: true }
 );
 export default mongoose.model("Driver", driverSchema);
+ 
