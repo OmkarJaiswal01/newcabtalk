@@ -6,6 +6,7 @@ import { ApiError } from "./utils/ApiError.js";
 import passengerRoutes from "./routes/passengerRoutes.js";
 import assetRoutes from "./routes/assetRoutes.js";
 import journeyRoutes from "./routes/journeyRouter.js";
+import completeJourneyRoutes from "./routes/completeJourneyRouter.js";
 
 const app = express();
 
@@ -19,6 +20,7 @@ app.use("/api/v1/",passengerRoutes )
 app.use("/api/v1/drivers", driverRoutes);
 app.use("/api/v1/assets", assetRoutes);
 app.use("/api/v1", journeyRoutes);
+app.use("/api/v1", completeJourneyRoutes);
 
 app.use((err, req, res, next) => {
   if (err instanceof ApiError) {

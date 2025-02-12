@@ -33,14 +33,21 @@ export const createJourney = async (req, res) => {
 
     await newJourney.save();
 
+    // Update the Asset to set isActive to true
+    asset.isActive = true;
+    await asset.save(); // Save the updated asset
+
     return res.status(201).json({
       message: "Journey created successfully",
       newJourney,
+      updatedAsset: asset, // Return the updated asset for confirmation
     });
   } catch (error) {
     return res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
+
 
 export const getJourneys = async (req, res) => {
   try {
