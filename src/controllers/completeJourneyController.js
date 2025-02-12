@@ -1,6 +1,6 @@
 
-import Journey from "../models/JourneyModel.js"; // Active Journey Model
-import EndJourney from "../models/completeJourneyModel.js"; // Ended Journey Model
+import Journey from "../models/JourneyModel.js"; // Ensure you import the Journey model
+import EndJourney from "../models/completeJourneyModel.js";
 import Asset from "../models/assetModel.js";
 import Driver from "../models/driverModel.js";
 
@@ -8,14 +8,14 @@ export const endJourney = async (req, res) => {
   try {
     const { vehicleNumber } = req.body;
 
-    // Find driver by vehicle number
+    // Find the driver by vehicle number
     const driver = await Driver.findOne({ vehicleNumber });
 
     if (!driver) {
       return res.status(404).json({ message: "Driver not found" });
     }
 
-    // Find the active journey
+    // Find the active journey for this driver
     const journey = await Journey.findOne({ Driver: driver._id });
 
     if (!journey) {
@@ -32,11 +32,11 @@ export const endJourney = async (req, res) => {
 
     await endedJourney.save();
 
-    // Delete the active journey
-    await Journey.deleteOne({ _id: journey._id });
+    // Delete the journey from the Journey model after successfully saving in EndJourney
+    await Journey.findByIdAndDelete(journey._id);
 
-    // Update Asset status to inactive
-    await Asset.updateOne({ _id: journey.Asset }, { isActive: false });
+    // Set Asset's isActive to false since journey ended
+    await Asset.findByIdAndUpdate(journey.Asset, { isActive: false });
 
     return res.status(200).json({
       message: "Journey ended successfully",
