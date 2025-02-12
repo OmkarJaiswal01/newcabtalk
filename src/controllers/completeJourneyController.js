@@ -49,25 +49,29 @@ export const endJourney = async (req, res) => {
 
 
 
+
 export const getEndedJourneys = async (req, res) => {
-    try {
-      const endedJourneys = await EndJourney.find()
-        .populate({
-          path: "Driver",
-          select: "vehicleNumber", // Fetch only vehicleNumber
-        })
-        .select("Journey_Type Occupancy"); // Fetch required fields
-  
-      const formattedData = endedJourneys.map((journey) => ({
+  try {
+    const endedJourneys = await EndJourney.find()
+      .populate({
+        path: "Driver",
+        select: "vehicleNumber", // Fetch only vehicleNumber
+      });
+
+    // Filter out journeys where Driver is null
+    const formattedData = endedJourneys
+      .filter(journey => journey.Driver) // Remove entries where Driver is null
+      .map((journey) => ({
         vehicleNumber: journey.Driver.vehicleNumber,
         Journey_Type: journey.Journey_Type,
         Occupancy: journey.Occupancy,
       }));
-  
-      return res.status(200).json(formattedData);
-    } catch (error) {
-      return res.status(500).json({ message: "Server error", error: error.message });
-    }
-  };
+
+    return res.status(200).json(formattedData);
+  } catch (error) {
+    return res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
   
   
