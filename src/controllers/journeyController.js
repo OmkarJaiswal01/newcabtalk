@@ -20,6 +20,13 @@ export const createJourney = async (req, res) => {
       return res.status(404).json({ message: "Asset not found for this driver" });
     }
 
+    // Check if an active journey exists for this asset
+    const existingJourney = await Journey.findOne({ Asset: asset._id });
+
+    if (existingJourney && asset.isActive) {
+      return res.status(400).json({ message: "A journey is already active for this vehicle. End the current journey before starting a new one." });
+    }
+
     // Count the passengers in the asset
     const Occupancy = asset.passengers.length;
 
@@ -46,6 +53,7 @@ export const createJourney = async (req, res) => {
     return res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
 
 
 
